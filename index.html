@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بوابة الزمان: تجربة غامرة</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Desert Sands & Papyrus with cinematic accents -->
+    <!-- Application Structure Plan: Full-screen cinematic narrative. Each scene is a distinct visual and auditory experience. Dynamic background images, animated emojis, and orchestrated ambient soundscapes using Tone.js. Navigation via next/prev buttons. AI interaction for "Inspirational Question," "Imagine Your First Day," and "Personalized Welcome Message." Global audio controls. The design emphasizes immersive storytelling over traditional web layout. -->
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #FDF8F0;
+            color: #4E4234;
+            overflow: hidden; /* Hide scrollbars for full-screen effect */
+        }
+        .bg-primary { background-color: #FDF8F0; }
+        .bg-secondary { background-color: #F5EFE1; }
+        .text-primary { color: #4E4234; }
+        .text-accent { color: #8D6B4C; }
+        .bg-accent { background-color: #D4A056; }
+        .bg-accent-hover:hover { background-color: #C08C3B; }
+        .shadow-custom { 
+            box-shadow: 0 10px 30px -5px rgba(141, 107, 76, 0.15), 0 6px 12px -6px rgba(141, 107, 76, 0.1); 
+        }
+        .text-shadow-light {
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+        }
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #D4A056;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Full-screen scene container */
+        .scene-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 2rem;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            transition: background-image 1.5s ease-in-out; /* Smooth transition for background image */
+            position: relative;
+            overflow: hidden; 
+        }
+        /* No more ::before for gradients, background-image will be set directly */
+
+        /* Animations for visual dazzle */
+        @keyframes fadeInText {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fadeInText {
+            animation: fadeInText 1s ease-out forwards;
+        }
+
+        @keyframes pulseIcon {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        .animate-pulseIcon {
+            animation: pulseIcon 1.5s ease-in-out infinite; /* Continuous pulse */
+        }
+    </style>
+</head>
+<body class="bg-primary">
+    <nav class="absolute top-0 left-0 right-0 z-50 bg-primary/80 backdrop-blur-md shadow-sm hidden md:block">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-2xl font-bold text-accent text-shadow-light">بوابة الزمان</span>
+                </div>
+                <div>
+                    <div class="ml-10 flex items-baseline space-x-4 space-x-reverse">
+                        <a href="#story-container" class="text-primary hover:text-accent px-3 py-2 rounded-md text-sm font-medium">القصة</a>
+                        <a href="#call-to-action" class="text-primary hover:text-accent px-3 py-2 rounded-md text-sm font-medium">انضم إلينا</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <section id="story-container" class="scene-container">
+            <div class="relative z-10 max-w-4xl w-full bg-secondary/90 p-8 rounded-xl shadow-custom text-center animate-fadeInText">
+                <h1 id="story-title" class="text-4xl md:text-5xl font-bold text-accent leading-tight mb-6 text-shadow-light"></h1>
+                <p id="story-text" class="mt-6 text-lg md:text-xl text-primary leading-relaxed"></p>
+                <div class="mt-6 text-5xl">
+                    <span id="story-icon"></span>
+                </div>
+
+                <div id="ai-response-area" class="mt-6 p-4 bg-primary rounded-lg shadow-inner text-primary hidden animate-fadeIn">
+                    <div class="loading-spinner hidden"></div>
+                    <p id="ai-response-text" class="leading-relaxed"></p>
+                </div>
+                
+                <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+                    <button id="prev-scene-btn" class="bg-accent text-white font-bold py-3 px-8 rounded-full text-lg bg-accent-hover transition-all duration-300 transform hover:scale-105 opacity-50 cursor-not-allowed">
+                        المشهد السابق
+                    </button>
+                    <button id="next-scene-btn" class="bg-accent text-white font-bold py-3 px-8 rounded-full text-lg bg-accent-hover transition-all duration-300 transform hover:scale-105">
+                        المشهد التالي
+                    </button>
+                </div>
+                <div class="mt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
+                    <span class="text-primary"><span id="current-scene-indicator">1</span> / <span id="total-scenes-indicator"></span></span>
+                    <button id="read-text-btn" class="bg-accent text-white font-bold py-2 px-6 rounded-full text-sm bg-accent-hover transition-all duration-300">
+                        قراءة النص 🔊
+                    </button>
+                </div>
+                <div class="mt-6">
+                    <button id="inspire-me-btn" class="bg-accent text-white font-bold py-2 px-6 rounded-full text-sm bg-accent-hover transition-all duration-300">
+                        اكتشف لمحة من الماضي ✨
+                    </button>
+                    <button id="imagine-first-day-btn" class="bg-accent text-white font-bold py-2 px-6 rounded-full text-sm bg-accent-hover transition-all duration-300 ml-4">
+                        تخيل يومك الأول كطالب ✨
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <section id="call-to-action" class="min-h-screen flex items-center justify-center py-20 bg-secondary text-center">
+            <div class="max-w-3xl mx-auto px-4">
+                <h2 class="text-3xl font-bold text-accent mb-6 text-shadow-light">قصتكم تبدأ هنا!</h2>
+                <p class="text-lg text-primary mb-8">في الإسماعيلية، أنت لا تدرسُ فقط، بل تُصبحُ جزءاً من قصةٍ تاريخيةٍ عريقةٍ ترحبُ بكَ وتُحتضنكَ. انضم إلينا لِتبدأَ فصلكَ الجديدَ!</p>
+                
+                <div class="mt-10 p-6 bg-primary rounded-xl shadow-custom">
+                    <h3 class="text-xl font-bold text-accent mb-4">رسالة ترحيب شخصية من الإسماعيلية ✨</h3>
+                    <div class="flex flex-col sm:flex-row gap-4 mb-4">
+                        <input type="text" id="student-name-input" class="flex-grow p-3 text-primary bg-secondary rounded-lg border-2 border-accent/30 focus:outline-none focus:border-accent shadow-inner" placeholder="اسمك (اختياري)">
+                        <input type="text" id="student-country-input" class="flex-grow p-3 text-primary bg-secondary rounded-lg border-2 border-accent/30 focus:outline-none focus:border-accent shadow-inner" placeholder="بلدك (اختياري)">
+                    </div>
+                    <button id="get-personalized-welcome-btn" class="bg-accent text-white font-bold py-3 px-8 rounded-full text-lg bg-accent-hover transition-all duration-300 transform hover:scale-105">
+                        احصل على رسالتك!
+                    </button>
+                    <div id="personalized-welcome-output" class="mt-6 p-4 bg-secondary rounded-lg shadow-inner text-primary hidden animate-fadeIn">
+                        <div class="loading-spinner hidden"></div>
+                        <p></p>
+                    </div>
+                </div>
+
+                <a href="#" class="mt-8 inline-block bg-accent text-white font-bold py-3 px-8 rounded-full text-lg bg-accent-hover transition-all duration-300 transform hover:scale-105">
+                    اكتشف جامعة قناة السويس
+                </a>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-primary">
+        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 text-center text-primary">
+            <p>&copy; 2025 بوابة الزمان. جميع الحقوق محفوظة.</p>
+        </div>
+    </footer>
+
+    <div class="fixed bottom-4 left-4 bg-secondary p-3 rounded-full shadow-lg flex items-center space-x-2 z-50">
+        <button id="toggle-music" class="text-accent text-xl focus:outline-none">
+            🎶
+        </button>
+        <button id="toggle-ambient-sound" class="text-accent text-xl focus:outline-none">
+            🍃
+        </button>
+    </div>
+
+    <script>
+        const storyScenes = [
+            {
+                title: "مِنْ رَحِمِ التاريخِ وُلِدَتْ هُويَّتِي!",
+                text: "أنا التي وُلِدْتُ هنا؛ على هذه الأرضِ. ولِيِ عديدٌ من الأسماءِ.",
+                icon: "⏳",
+                imageUrl: "https://placehold.co/1920x1080/6F5C4B/FFFFFF?text=Ancient+History",
+                ambientSound: 'desert_wind'
+            },
+            {
+                title: "واحةٌ من رمالٍ وماءٍ",
+                text: "في غابر التاريخ، وفي لحظةٍ ما، تلاقت مياه النيل مع بحيرةٍ مُرَّة. فتشبعت رِمالِيِ الصفراء مَاَءً مالحًا عذبًا! ثم فاضَتْ تُرْبَتِي مِنَ الثَمَراتِ أَشْجَارًا، واستحالت الأرضُ؛ باتحاد الأشجارِ المثمرات، مع ما عداها من شجرٍ كثيفٍ، إلى ما يشبه الواحة! كان موقعُ قدميَّ مُذهلًا! كُنتُ في الملتقى تمامًا، بين أرض الشام وأرض مصر! على الحدود من سيناء المباركة!",
+                icon: "🌊🌳",
+                imageUrl: "https://placehold.co/1920x1080/4CAF50/FFFFFF?text=Desert+Oasis",
+                ambientSound: 'oasis_life'
+            },
+            {
+                title: "بوابةُ الحضاراتِ وملتقى التجارةِ",
+                text: "كُنتُ كالبوابةِ التي يَمُرُّ منها قاصدِ هذه البلاد، أو تلك! وكذلك؛ لو نَظَرْتَ هناك، وأمعنتَ النَظَرْ؛ لَوَجَدْتَنِي في مُنْتَصَفِ طَريقِ تجارةٍ؛ ما بين بَحْرَينِ؛ بلَونَينِ، أحمرٍ وأبيضِ! كان موقِعِي مثاليًا! في الواقع؛ كان عبقريًا! أنا صحراءُ من جهاتي الأربع! وفي المنتصف تمامًا، أنا واحةٍ للراحة! كم استقْبَلْتُ مَارًّا من هنا! مُتَّجِرًا كان؛ أو عابرُ سبيلِ؟ كم من ملوك الأرضِ مرُّوا من هنا؛ غازينَ، أو فاتحينَ؟ كم من الصالحينَ! أنا هنا منذ أصبح التاريخ صُبحًا. وهُويَّتِي هي الأرضُ. أنا واحة! ولِيِ عديدٌ من الأسماءِ.",
+                icon: "🗺️🕌",
+                imageUrl: "https://placehold.co/1920x1080/D4A056/FFFFFF?text=Trade+Route+Gateway",
+                ambientSound: 'trade_hub'
+            },
+            {
+                title: "تغيراتُ العصرِ وقناةُ السويسِ",
+                text: "في عصركم هذا! دعاني مَلِكًا من ملوكِ مصر باسمه. وَاحَتُهُ؛ يقصد! ومنذ أن دعاني باسمه؛ أصبَحتُ واحةُ كُلِّ مَنْ مَلَكَ بَعْدَهُ. إلا أنه قد طَرَأَنِي بعض التغير! إذ حجزت قناةٍ؛ شُقَّتْ ما بين بَحْرَينِ، إلى إختلافٍ في طبيعتِيِ. لم أعُد أرى سيناء الحبيبة كما اعتدْت أن أراها سابقًا! حتى قوافل التجار التي كانت كثيرًا ما تستريحُ تحتَ أشجاري؛ استبدلتْ سفينة الصحراء بسفينةٍ أخرى تحملُ بضائعَهم على الماء! لكني كنت قد بدأت أستحيل بالفعل إلى مدينةٍ، وقد استقر المُقام ببعض من الأغراب، بيضَ الوجوه شقرًا، في رحابي. يديرون شئون القناةِ التي شُقَّت على وجهي! وانضم بعض أهل مصر من الزُرَّاعِ يفلحون تُربَتي؛ وللعجبِ، أنتجت أرضي أشهى الفاكهة وأخرجت بحيراتي أشهر الأسماك!",
+                icon: "🚢🏙️",
+                imageUrl: "https://placehold.co/1920x1080/87CEEB/FFFFFF?text=Suez+Canal+Modernization",
+                ambientSound: 'urban_transformation'
+            },
+            {
+                title: "الترحيبُ والصمودُ: هُويَّتِي",
+                text: "كم أحبُّ هُويَّتِي! أنا دومًا مُرَحِبه. أحب الابتسام. حتى إن شعاري الذي استقبل به الزوار يبدأ به. ابتسم.. أنت في حضرتي! ثم عانيتُ ويلات الحروب؛ لكني صمدت! بل أني أذكر لحظة عبورِ كتائب الإيمان، تسترد لعيني، سيناء الحبيبة! لحظة دحرنا المعتدي الغازي.",
+                icon: "😊🛡️",
+                imageUrl: "https://placehold.co/1920x1080/FFC0CB/FFFFFF?text=Resilience+Welcome",
+                ambientSound: 'resilience_spirit'
+            },
+            {
+                title: "جامعةُ قناةِ السويس: منارةُ العلمِ",
+                text: "من بعدها؛ بدأ البناء على نصرٍ أتى. فنبتت بأحشائي منارة العلم التي، أفخر بها، وما تغرسه من وعي! أقدم إليكم؛ جامعة قناة السويس! منارة العلم.",
+                icon: "🎓💡",
+                imageUrl: "https://placehold.co/1920x1080/DAA520/FFFFFF?text=University+Campus",
+                ambientSound: 'academic_aura'
+            }
+        ];
+
+        let currentSceneIndex = 0;
+        const storyContainer = document.getElementById('story-container');
+        const storyTitle = document.getElementById('story-title');
+        const storyText = document.getElementById('story-text');
+        const storyIcon = document.getElementById('story-icon');
+        const prevSceneBtn = document.getElementById('prev-scene-btn');
+        const nextSceneBtn = document.getElementById('next-scene-btn');
+        const readTextBtn = document.getElementById('read-text-btn');
+        const currentSceneIndicator = document.getElementById('current-scene-indicator');
+        const totalScenesIndicator = document.getElementById('total-scenes-indicator');
+        const inspireMeBtn = document.getElementById('inspire-me-btn');
+        const imagineFirstDayBtn = document.getElementById('imagine-first-day-btn');
+        const aiResponseArea = document.getElementById('ai-response-area');
+        const aiResponseText = document.getElementById('ai-response-text');
+        const loadingSpinner = aiResponseArea.querySelector('.loading-spinner');
+        const studentNameInput = document.getElementById('student-name-input');
+        const studentCountryInput = document.getElementById('student-country-input');
+        const getPersonalizedWelcomeBtn = document.getElementById('get-personalized-welcome-btn');
+        const personalizedWelcomeOutput = document.getElementById('personalized-welcome-output');
+        const personalizedWelcomeText = personalizedWelcomeOutput.querySelector('p');
+        const personalizedWelcomeSpinner = personalizedWelcomeOutput.querySelector('.loading-spinner');
+
+        let currentUtterance = null;
+        let femaleVoice = null; 
+
+        // Tone.js setup for background music
+        let backgroundSynth = new Tone.PolySynth(Tone.Synth, {
+            oscillator: { type: "sine" },
+            envelope: { attack: 3, decay: 1, sustain: 0.7, release: 5 }
+        }).toDestination();
+        backgroundSynth.volume.value = -18;
+
+        let musicLoop;
+        let isMusicPlaying = false;
+
+        function startMusic() {
+            if (!musicLoop) {
+                const chords = [
+                    ["C4", "E4", "G4"],
+                    ["F4", "A4", "C5"],
+                    ["G4", "B4", "D5"],
+                    ["A3", "C4", "E4"]
+                ];
+                let chordIndex = 0;
+                musicLoop = new Tone.Loop(time => {
+                    backgroundSynth.triggerAttackRelease(chords[chordIndex % chords.length], "4n", time);
+                    chordIndex++;
+                }, "2n").start(0);
+            }
+            Tone.Transport.start();
+            isMusicPlaying = true;
+            document.getElementById('toggle-music').textContent = '🎶';
+        }
+
+        function stopMusic() {
+            Tone.Transport.stop();
+            Tone.Transport.cancel(); 
+            backgroundSynth.releaseAll();
+            musicLoop = null; 
+            isMusicPlaying = false;
+            document.getElementById('toggle-music').textContent = '🔇';
+        }
+
+        document.getElementById('toggle-music').addEventListener('click', async () => {
+            await Tone.start();
+            if (isMusicPlaying) {
+                stopMusic();
+            } else {
+                startMusic();
+            }
+        });
+
+        // Tone.js setup for ambient sound
+        let ambientSynth = new Tone.NoiseSynth({
+            envelope: {
+                attack: 0.05,
+                decay: 0.5,
+                sustain: 0.5,
+                release: 1
+            }
+        }).toDestination();
+        ambientSynth.volume.value = -30;
+        let ambientNoiseLoop;
+        let isAmbientSoundPlaying = false;
+
+        function startAmbientSound(type) {
+            if (ambientNoiseLoop) { 
+                ambientNoiseLoop.stop();
+                ambientNoiseLoop = null;
+            }
+            
+            if (type === 'desert_wind') {
+                ambientSynth.set({ noise: { type: 'white' }, envelope: { attack: 1, decay: 2, sustain: 0.8, release: 3 } });
+                ambientNoiseLoop = new Tone.Loop(time => {
+                    ambientSynth.triggerAttackRelease("8n", time, Math.random() * 0.4 + 0.6);
+                }, "2n").start(0);
+            } else if (type === 'oasis_life') {
+                ambientSynth.set({ noise: { type: 'pink' }, envelope: { attack: 0.05, decay: 0.2, sustain: 0.3, release: 0.5 } });
+                ambientNoiseLoop = new Tone.Loop(time => {
+                    ambientSynth.triggerAttackRelease("32n", time, Math.random() * 0.1 + 0.9, Math.random() * 0.5 + 0.5);
+                }, "0.5s").start(0);
+            } else if (type === 'trade_hub') {
+                ambientSynth.set({ noise: { type: 'brown' }, envelope: { attack: 0.1, decay: 0.5, sustain: 0.4, release: 0.8 } });
+                ambientNoiseLoop = new Tone.Loop(time => {
+                    ambientSynth.triggerAttackRelease("4n", time, Math.random() * 0.1 + 0.9);
+                }, "1s").start(0);
+            } else if (type === 'urban_transformation') {
+                ambientSynth.set({ noise: { type: 'brown' }, envelope: { attack: 0.2, decay: 0.8, sustain: 0.7, release: 1.5 } });
+                ambientNoiseLoop = new Tone.Loop(time => {
+                    ambientSynth.triggerAttackRelease("2n", time, Math.random() * 0.05 + 0.95);
+                }, "2n").start(0);
+            } else if (type === 'resilience_spirit') {
+                ambientSynth.set({ noise: { type: 'pink' }, envelope: { attack: 2, decay: 1, sustain: 0.9, release: 4 } });
+                ambientNoiseLoop = new Tone.Loop(time => {
+                    ambientSynth.triggerAttackRelease("1n", time, 0.5);
+                }, "4n").start(0);
+            } else if (type === 'academic_aura') {
+                 ambientSynth.set({ noise: { type: 'white' }, envelope: { attack: 0.1, decay: 0.5, sustain: 0.5, release: 1 } });
+                ambientNoiseLoop = new Tone.Loop(time => {
+                    ambientSynth.triggerAttackRelease("8n", time, Math.random() * 0.1 + 0.9, Math.random() * 0.3 + 0.7);
+                }, "1s").start(0);
+            } else if (type === 'none') {
+                // Do nothing if type is 'none'
+            }
+
+            if (ambientNoiseLoop) { 
+                Tone.Transport.start();
+                isAmbientSoundPlaying = true;
+                document.getElementById('toggle-ambient-sound').textContent = '🍃';
+            }
+        }
+
+        function stopAmbientSound() {
+            if (ambientNoiseLoop) {
+                ambientNoiseLoop.stop();
+                ambientNoiseLoop = null;
+            }
+            if (!isMusicPlaying) {
+                Tone.Transport.stop();
+                Tone.Transport.cancel();
+            }
+            isAmbientSoundPlaying = false;
+            document.getElementById('toggle-ambient-sound').textContent = '🔇';
+        }
+
+        document.getElementById('toggle-ambient-sound').addEventListener('click', async () => {
+            await Tone.start();
+            if (isAmbientSoundPlaying) {
+                stopAmbientSound();
+            } else {
+                startAmbientSound(storyScenes[currentSceneIndex].ambientSound || 'desert_wind');
+            }
+        });
+
+        // Function to select female Arabic voice
+        function selectFemaleArabicVoice() {
+            const voices = window.speechSynthesis.getVoices();
+            let selectedVoice = null;
+
+            const preferredNames = [
+                'Arabic (Saudi Arabia) (Female)', 'Amira', 'Tarab', 
+                'ar-SA-Standard-A', 'ar-EG-Standard-A' 
+            ];
+
+            for (const name of preferredNames) {
+                selectedVoice = voices.find(voice => voice.lang.startsWith('ar') && voice.name.includes(name));
+                if (selectedVoice) break;
+            }
+
+            if (!selectedVoice) {
+                selectedVoice = voices.find(voice => voice.gender === 'female' || voice.name.includes('female') || voice.name.includes('Female'));
+            }
+
+            if (!selectedVoice) {
+                selectedVoice = voices.find(voice => voice.lang.startsWith('ar'));
+            }
+
+            return selectedVoice;
+        }
+
+        window.speechSynthesis.onvoiceschanged = () => {
+            femaleVoice = selectFemaleArabicVoice();
+            if (!femaleVoice) {
+                console.warn('No suitable Arabic female voice found. Text-to-speech might use a default or male voice.');
+            } else {
+                console.log('Selected voice for playback:', femaleVoice.name, femaleVoice.lang);
+            }
+        };
+
+
+        function updateScene() {
+            const scene = storyScenes[currentSceneIndex];
+            // Set background image
+            storyContainer.style.backgroundImage = `url('${scene.imageUrl}')`;
+            // No longer need mood classes for background colors, but keep for consistency in naming if needed for other styles
+            storyContainer.classList.remove(...Array.from(storyContainer.classList).filter(c => c.startsWith('mood-')));
+            // The mood class is still useful for semantic grouping or potential future styling, even if not directly for background-color anymore.
+            storyContainer.classList.add(scene.mood);
+
+            storyTitle.textContent = scene.title;
+            storyText.textContent = scene.text;
+            
+            storyTitle.classList.remove('animate-fadeInText');
+            storyText.classList.remove('animate-fadeInText');
+            void storyTitle.offsetWidth; 
+            void storyText.offsetWidth; 
+            storyTitle.classList.add('animate-fadeInText');
+            storyText.classList.add('animate-fadeInText');
+
+            storyIcon.textContent = scene.icon;
+            storyIcon.classList.remove('animate-pulseIcon');
+            void storyIcon.offsetWidth; 
+            storyIcon.classList.add('animate-pulseIcon');
+
+            prevSceneBtn.disabled = currentSceneIndex === 0;
+            prevSceneBtn.classList.toggle('opacity-50', currentSceneIndex === 0);
+            prevSceneBtn.classList.toggle('cursor-not-allowed', currentSceneIndex === 0);
+
+            nextSceneBtn.disabled = currentSceneIndex === storyScenes.length - 1;
+            nextSceneBtn.classList.toggle('opacity-50', currentSceneIndex === storyScenes.length - 1);
+            nextSceneBtn.classList.toggle('cursor-not-allowed', currentSceneIndex === storyScenes.length - 1);
+
+            currentSceneIndicator.textContent = currentSceneIndex + 1;
+            totalScenesIndicator.textContent = storyScenes.length;
+
+            aiResponseArea.classList.add('hidden');
+            aiResponseText.textContent = '';
+            
+            if (imagineFirstDayBtn) {
+                imagineFirstDayBtn.classList.add('hidden');
+                if (currentSceneIndex === storyScenes.length - 1) {
+                    imagineFirstDayBtn.classList.remove('hidden');
+                }
+            }
+
+
+            if (window.speechSynthesis.speaking) {
+                window.speechSynthesis.cancel();
+            }
+            
+            stopAmbientSound();
+            const newAmbientSoundType = scene.ambientSound || 'none';
+            if (newAmbientSoundType !== 'none') {
+                 startAmbientSound(newAmbientSoundType);
+            }
+        }
+
+        prevSceneBtn.addEventListener('click', () => {
+            if (currentSceneIndex > 0) {
+                currentSceneIndex--;
+                updateScene();
+            }
+        });
+
+        nextSceneBtn.addEventListener('click', () => {
+            if (currentSceneIndex < storyScenes.length - 1) {
+                currentSceneIndex++;
+                updateScene();
+            }
+        });
+
+        readTextBtn.addEventListener('click', () => {
+            if ('speechSynthesis' in window) {
+                if (window.speechSynthesis.speaking) {
+                    window.speechSynthesis.cancel();
+                } else {
+                    const textToSpeak = storyText.textContent;
+                    currentUtterance = new SpeechSynthesisUtterance(textToSpeak);
+                    currentUtterance.lang = 'ar-SA'; 
+                    if (femaleVoice) {
+                        currentUtterance.voice = femaleVoice;
+                    }
+                    window.speechSynthesis.speak(currentUtterance);
+                }
+            } else {
+                alert('عذراً، متصفحك لا يدعم خاصية قراءة النص.');
+            }
+        });
+
+        async function callGeminiAPI(prompt, outputElement, spinnerElement) {
+            outputElement.classList.remove('hidden');
+            outputElement.classList.remove('animate-fadeIn'); 
+            outputElement.querySelector('p').textContent = '';
+            spinnerElement.classList.remove('hidden');
+
+            const apiKey = "AIzaSyBt3W-fHQ-PPQBTPNlvKrC-XdVt_hz97QI"; 
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+            let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+            const payload = { contents: chatHistory };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    outputElement.querySelector('p').textContent = result.candidates[0].content.parts[0].text;
+                    outputElement.classList.add('animate-fadeIn');
+                } else {
+                    outputElement.querySelector('p').textContent = 'تعذر توليد الرد. حاول مرة أخرى.';
+                }
+            } catch (error) {
+                console.error('Error calling Gemini API:', error);
+                outputElement.querySelector('p').textContent = 'حدث خطأ أثناء الاتصال بالنموذج. حاول مرة أخرى.';
+            } finally {
+                spinnerElement.classList.add('hidden');
+            }
+        }
+
+        inspireMeBtn.addEventListener('click', () => {
+            const currentStoryText = storyScenes[currentSceneIndex].text;
+            const sceneTitle = storyScenes[currentSceneIndex].title;
+            const prompt = `بناءً على هذا الجزء من قصة المدينة وعنوانه "${sceneTitle}": "${currentStoryText}"، استخرج سؤالاً تأملياً عميقاً يلهم الطلاب الوافدين للتفكير في العلاقة بين التاريخ، الهوية، ودورهم كجزء من هذه القصة والسياق التاريخي العام. اجعل السؤال باللغة العربية الفصحى ومباشرة.`;
+            callGeminiAPI(prompt, aiResponseArea, loadingSpinner);
+        });
+
+        imagineFirstDayBtn.addEventListener('click', () => {
+            const prompt = `تخيل واكتب وصفًا حيويًا ومريحًا لِما قد يبدو عليه اليوم الأول لطالب وافد جديد يصل إلى الإسماعيلية ويلتحق بجامعة قناة السويس. ركز على مشاعر الترحاب، الأمان، سهولة الاندماج، الأجواء الودودة، وجمال المدينة، لتطمينه وبعث الحماس فيه. اجعل الوصف باللغة العربية الفصحى في فقرة واحدة.`;
+            callGeminiAPI(prompt, aiResponseArea, loadingSpinner);
+        });
+
+        getPersonalizedWelcomeBtn.addEventListener('click', () => {
+            const studentName = studentNameInput.value.trim();
+            const studentCountry = studentCountryInput.value.trim();
+            let prompt = `اكتب رسالة ترحيبية قصيرة ودافئة من "روح الإسماعيلية" لطالب وافد جديد في جامعة قناة السويس. ركز على مشاعر الترحاب، الأمان، الانتماء، وجمال المدينة كـ"واحة علم" تحتضنه.`;
+            if (studentName && studentCountry) {
+                prompt += ` الطالب اسمه ${studentName} ومن دولة ${studentCountry}.`;
+            } else if (studentName) {
+                prompt += ` الطالب اسمه ${studentName}.`;
+            } else if (studentCountry) {
+                prompt += ` الطالب من دولة ${studentCountry}.`;
+            }
+            prompt += ` اجعل الرسالة باللغة العربية الفصحى وبأسلوب أمومي حنون (كصوت الأرض).`;
+
+            callGeminiAPI(prompt, personalizedWelcomeOutput, personalizedWelcomeSpinner);
+        });
+
+        // Initial setup
+        window.onload = function() {
+            totalScenesIndicator.textContent = storyScenes.length;
+            updateScene();
+            startMusic(); 
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+            femaleVoice = selectFemaleArabicVoice();
+            if (!femaleVoice) {
+                console.warn('No suitable Arabic female voice found after load. Text-to-speech might use a default or male voice.');
+            } else {
+                console.log('Selected voice on load:', femaleVoice.name, femaleVoice.lang);
+            }
+        };
+    </script>
+</body>
+</html>
